@@ -1,20 +1,54 @@
 #include "AudioEngine.h"
 
-namespace audioStuff {
+namespace audiostuff {
+	FMODImplementation::FMODImplementation() {
+		StudioSystem = nullptr;
+		AudioEngine::ErrorCheck(FMOD::Studio::System::create(&StudioSystem));
+		AudioEngine::ErrorCheck(
+			StudioSystem->initialize(32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE, nullptr));
+
+		System = nullptr;
+		AudioEngine::ErrorCheck(StudioSystem->getCoreSystem(&System));
+	}
+
+	FMODImplementation::~FMODImplementation() {
+		AudioEngine::ErrorCheck(StudioSystem->unloadAll());
+		AudioEngine::ErrorCheck(StudioSystem->release());
+	}
+
+	void FMODImplementation::Update() {
+		std::vector<std::map<int, FMOD::Channel*>::iterator> StoppedChannels;
+		for (std::map<int, FMOD::Channel*>::iterator it = ChannelMap.begin(); it != ChannelMap.end(); it++)
+		{
+			bool IsPlaying = false;
+			if (!IsPlaying)
+			{
+				StoppedChannels.push_back(it);
+			}
+		}
+		for (std::map<int, FMOD::Channel*>::iterator it : StoppedChannels)
+		{
+			ChannelMap.erase(it);
+		}
+		AudioEngine::ErrorCheck(StudioSystem->update());
+	}
+
+	FMODImplementation* Implementation = nullptr;
+	
 	void AudioEngine::Init()
 	{
-		s_Implementation = new FMODImplementation();
+		Implementation = new FMODImplementation();
 	}
 
 	void AudioEngine::Update()
 	{
-		s_Implementation->Update();
+		Implementation->Update();
 	}
 
 	void AudioEngine::LoadSound(const std::string soundName, bool threeD, bool looping, bool stream)
 	{
-		std::map<std::string, FMOD::Sound*>::iterator foundIt = s_Implementation->SoundMap.find(soundName);
-		if (foundIt != s_Implementation->SoundMap.end()) return;
+		std::map<std::string, FMOD::Sound*>::iterator foundIt = Implementation->SoundMap.find(soundName);
+		if (foundIt != Implementation->SoundMap.end()) return;
 
 		FMOD_MODE mode = FMOD_DEFAULT;
 		mode |= threeD ? FMOD_3D : FMOD_2D;
@@ -22,34 +56,34 @@ namespace audioStuff {
 		mode |= stream ? FMOD_CREATESTREAM : FMOD_CREATECOMPRESSEDSAMPLE;
 
 		FMOD::Sound* sound = nullptr;
-		AudioEngine::ErrorCheck(s_Implementation->System->createSound(soundName.c_str(), mode, nullptr, &sound));
+		AudioEngine::ErrorCheck(Implementation->System->createSound(soundName.c_str(), mode, nullptr, &sound));
 		if (sound)
 		{
-			s_Implementation->SoundMap[soundName] = sound;
+			Implementation->SoundMap[soundName] = sound;
 		}
 	}
 
 	void AudioEngine::UnloadSound(const std::string soundName)
 	{
-		std::map<std::string, FMOD::Sound*>::iterator foundIt = s_Implementation->SoundMap.find(soundName);
-		if (foundIt == s_Implementation->SoundMap.end()) return;
+		std::map<std::string, FMOD::Sound*>::iterator foundIt = Implementation->SoundMap.find(soundName);
+		if (foundIt == Implementation->SoundMap.end()) return;
 
 		AudioEngine::ErrorCheck(foundIt->second->release());
-		s_Implementation->SoundMap.erase(foundIt);
+		Implementation->SoundMap.erase(foundIt);
 	}
 
 	int AudioEngine::PlaySound(const std::string soundName, const utilStuff::Vector3 position, float volumedB)
 	{
-		int channelId = s_Implementation->NextChannelId++;
-		std::map<std::string, FMOD::Sound*>::iterator foundIt = s_Implementation->SoundMap.find(soundName);
-		if (foundIt == s_Implementation->SoundMap.end())
+		int channelId = Implementation->NextChannelId++;
+		std::map<std::string, FMOD::Sound*>::iterator foundIt = Implementation->SoundMap.find(soundName);
+		if (foundIt == Implementation->SoundMap.end())
 		{
 			LoadSound(soundName);
-			foundIt = s_Implementation->SoundMap.find(soundName);
-			if (foundIt == s_Implementation->SoundMap.end()) return channelId;
+			foundIt = Implementation->SoundMap.find(soundName);
+			if (foundIt == Implementation->SoundMap.end()) return channelId;
 		}
 		FMOD::Channel* channel = nullptr;
-		AudioEngine::ErrorCheck(s_Implementation->System->playSound(foundIt->second, nullptr, true, &channel));
+		AudioEngine::ErrorCheck(Implementation->System->playSound(foundIt->second, nullptr, true, &channel));
 		if (channel)
 		{
 			FMOD_MODE mode;
@@ -61,15 +95,15 @@ namespace audioStuff {
 			}
 			AudioEngine::ErrorCheck(channel->setVolume(DBToVolume(volumedB)));
 			AudioEngine::ErrorCheck(channel->setPaused(false));
-			s_Implementation->ChannelMap[channelId] = channel;
+			Implementation->ChannelMap[channelId] = channel;
 		}
 		return channelId;
 	}
 
 	void AudioEngine::SetChannel3dPosition(int channelId, const utilStuff::Vector3 position)
 	{
-		std::map<int, FMOD::Channel*>::iterator foundIt = s_Implementation->ChannelMap.find(channelId);
-		if (foundIt == s_Implementation->ChannelMap.end()) return;
+		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
+		if (foundIt == Implementation->ChannelMap.end()) return;
 
 		FMOD_VECTOR fmodPosition = VectorToFmod(position);
 		AudioEngine::ErrorCheck(foundIt->second->set3DAttributes(&fmodPosition, NULL));
@@ -77,56 +111,56 @@ namespace audioStuff {
 
 	void AudioEngine::SetChannelVolume(int channelId, float volumedB)
 	{
-		std::map<int, FMOD::Channel*>::iterator foundIt = s_Implementation->ChannelMap.find(channelId);
-		if (foundIt == s_Implementation->ChannelMap.end()) return;
+		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
+		if (foundIt == Implementation->ChannelMap.end()) return;
 
 		AudioEngine::ErrorCheck(foundIt->second->setVolume(DBToVolume(volumedB)));
 	}
 
 	void AudioEngine::LoadBank(const std::string bankName, FMOD_STUDIO_LOAD_BANK_FLAGS flags) {
-		std::map<std::string, FMOD::Studio::Bank*>::iterator foundIt = s_Implementation->BankMap.find(bankName);
-		if (foundIt != s_Implementation->BankMap.end()) return;
+		std::map<std::string, FMOD::Studio::Bank*>::iterator foundIt = Implementation->BankMap.find(bankName);
+		if (foundIt != Implementation->BankMap.end()) return;
 
 		FMOD::Studio::Bank* bank = nullptr;
 		// TODO is &bank really correct?
-		AudioEngine::ErrorCheck(s_Implementation->StudioSystem->loadBankFile(bankName.c_str(), flags, &bank));
+		AudioEngine::ErrorCheck(Implementation->StudioSystem->loadBankFile(bankName.c_str(), flags, &bank));
 		if(bank)
 		{
-			s_Implementation->BankMap[bankName] = bank;
+			Implementation->BankMap[bankName] = bank;
 		}
 	}
 
 	void AudioEngine::LoadEvent(const std::string eventName) {
-		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = s_Implementation->EventMap.find(eventName);
-		if (foundIt != s_Implementation->EventMap.end()) return;
+		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = Implementation->EventMap.find(eventName);
+		if (foundIt != Implementation->EventMap.end()) return;
 
 		FMOD::Studio::EventDescription* eventDescription = nullptr;
-		AudioEngine::ErrorCheck(s_Implementation->StudioSystem->getEvent(eventName.c_str(), &eventDescription));
+		AudioEngine::ErrorCheck(Implementation->StudioSystem->getEvent(eventName.c_str(), &eventDescription));
 		if (eventDescription)
 		{
 			FMOD::Studio::EventInstance* eventInstance = nullptr;
 			AudioEngine::ErrorCheck(eventDescription->createInstance(&eventInstance));
 			if (eventInstance)
 			{
-				s_Implementation->EventMap[eventName] = eventInstance;
+				Implementation->EventMap[eventName] = eventInstance;
 			}
 		}
 	}
 
 	void AudioEngine::PlayEvent(const std::string eventName) {
-		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = s_Implementation->EventMap.find(eventName);
-		if (foundIt == s_Implementation->EventMap.end())
+		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = Implementation->EventMap.find(eventName);
+		if (foundIt == Implementation->EventMap.end())
 		{
 			LoadEvent(eventName);
-			foundIt = s_Implementation->EventMap.find(eventName);
-			if (foundIt == s_Implementation->EventMap.end()) return;
+			foundIt = Implementation->EventMap.find(eventName);
+			if (foundIt == Implementation->EventMap.end()) return;
 		}
 		foundIt->second->start();
 	}
 
 	void AudioEngine::StopEvent(const std::string eventName, bool immediate) {
-		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = s_Implementation->EventMap.find(eventName);
-		if (foundIt == s_Implementation->EventMap.end()) return;
+		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = Implementation->EventMap.find(eventName);
+		if (foundIt == Implementation->EventMap.end()) return;
 
 		FMOD_STUDIO_STOP_MODE mode;
 		mode = immediate ? FMOD_STUDIO_STOP_IMMEDIATE : FMOD_STUDIO_STOP_ALLOWFADEOUT;
@@ -135,8 +169,8 @@ namespace audioStuff {
 	}
 
 	bool AudioEngine::IsEventPlaying(const std::string eventName) const {
-		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = s_Implementation->EventMap.find(eventName);
-		if (foundIt == s_Implementation->EventMap.end()) return false;
+		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = Implementation->EventMap.find(eventName);
+		if (foundIt == Implementation->EventMap.end()) return false;
 
 		FMOD_STUDIO_PLAYBACK_STATE* state = nullptr;
 		if (foundIt->second->getPlaybackState(state) == FMOD_STUDIO_PLAYBACK_PLAYING) return true;
@@ -145,8 +179,8 @@ namespace audioStuff {
 
 	// TODO change this to a return type?
 	void AudioEngine::GetEventParameterValue(const std::string eventName, const std::string parameterName, float* parameter) {
-		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = s_Implementation->EventMap.find(eventName);
-		if (foundIt == s_Implementation->EventMap.end()) return;
+		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = Implementation->EventMap.find(eventName);
+		if (foundIt == Implementation->EventMap.end()) return;
 
 		float* parameterValue = nullptr;
 		// CHECK Does this work?
@@ -156,8 +190,8 @@ namespace audioStuff {
 	}
 
 	void AudioEngine::SetEventParameterValue(const std::string eventName, const std::string parameterName, float parameterValue) {
-		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = s_Implementation->EventMap.find(eventName);
-		if (foundIt == s_Implementation->EventMap.end()) return;
+		std::map<std::string, FMOD::Studio::EventInstance*>::iterator foundIt = Implementation->EventMap.find(eventName);
+		if (foundIt == Implementation->EventMap.end()) return;
 
 		float* parameter = nullptr;
 		AudioEngine::ErrorCheck(foundIt->second->getParameterByName(parameterName.c_str(), parameter));
@@ -179,7 +213,7 @@ namespace audioStuff {
 		return 20.0f * log10f(volume);
 	}
 
-	int AudioEngine::ErrorCheck(FMOD_RESULT result) {
+	uint8_t AudioEngine::ErrorCheck(FMOD_RESULT result) {
 		if (result != FMOD_OK)
 		{
 			std::cout << "FMOD ERROR " << result << std::endl;
@@ -189,8 +223,6 @@ namespace audioStuff {
 	}
 
 	void AudioEngine::Shutdown() {
-		delete s_Implementation;
+		delete Implementation;
 	}
-
-
 }

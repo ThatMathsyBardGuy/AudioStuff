@@ -15,7 +15,7 @@
 
 //#include <math.h>
 
-namespace audioStuff {
+namespace audiostuff {
 	struct FMODImplementation {
 		FMODImplementation();
 		~FMODImplementation();
@@ -45,58 +45,23 @@ namespace audioStuff {
 		void LoadEvent(const std::string eventName);
 		void LoadSound(const std::string soundName, bool threeD = true, bool looping = false, bool stream = false);
 		void UnloadSound(const std::string soundName);
-		void Set3dListenerAndOrientation(const utilStuff::Vector3 pos = utilStuff::Vector3{0, 0, 0}, float volumedB = 0.0f);
+		//void Set3dListenerAndOrientation(const utilStuff::Vector3 pos = utilStuff::Vector3{0, 0, 0}, float volumedB = 0.0f);
 		int PlaySound(const std::string soundName, const utilStuff::Vector3 pos = utilStuff::Vector3{0, 0, 0}, float volumedB = 0.0f);
 		void PlayEvent(const std::string eventName);
-		void StopChannel(int channelId);
+		//void StopChannel(int channelId);
 		void StopEvent(const std::string eventName, bool immediate = false);
 		void GetEventParameterValue(const std::string eventName, const std::string eventParameter, float* parameter);
 		void SetEventParameterValue(const std::string eventName, const std::string parameterName, float value);
-		void StopAllChannels();
+		//void StopAllChannels();
 		void SetChannel3dPosition(int channelId, const utilStuff::Vector3 position);
 		void SetChannelVolume(int channelId, float volumedB);
-		bool IsPlaying(int channelId) const;
+		//bool IsPlaying(int channelId) const;
 		bool IsEventPlaying(const std::string eventName) const;
 		float DBToVolume(float db);
 		float VolumeTodB(float volume);
 		FMOD_VECTOR VectorToFmod(const utilStuff::Vector3 position);
-
-	protected:
-		static FMODImplementation* s_Implementation;
 	};
-
-	FMODImplementation::FMODImplementation() {
-		StudioSystem = nullptr;
-		AudioEngine::ErrorCheck(FMOD::Studio::System::create(&StudioSystem));
-		AudioEngine::ErrorCheck(
-			StudioSystem->initialize(32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE, nullptr));
-
-		System = nullptr;
-		AudioEngine::ErrorCheck(StudioSystem->getCoreSystem(&System));
-	}
-
-	FMODImplementation::~FMODImplementation() {
-		AudioEngine::ErrorCheck(StudioSystem->unloadAll());
-		AudioEngine::ErrorCheck(StudioSystem->release());
-	}
-
-	void FMODImplementation::Update() {
-		std::vector<std::map<int, FMOD::Channel*>::iterator> StoppedChannels;
-		for (std::map<int, FMOD::Channel*>::iterator it = ChannelMap.begin(); it != ChannelMap.end(); it++)
-		{
-			bool IsPlaying = false;
-			if (!IsPlaying)
-			{
-				StoppedChannels.push_back(it);
-			}
-		}
-		for (std::map<int, FMOD::Channel*>::iterator it : StoppedChannels)
-		{
-			ChannelMap.erase(it);
-		}
-		AudioEngine::ErrorCheck(StudioSystem->update());
-	}
+	
 }
-
 
 #endif
