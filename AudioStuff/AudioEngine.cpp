@@ -109,6 +109,16 @@ namespace audiostuff {
 		AudioEngine::ErrorCheck(foundIt->second->set3DAttributes(&fmodPosition, NULL));
 	}
 
+	void AudioEngine::GetChannel3dPosition(int channelId, utilStuff::Vector3* position) {
+		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
+		if (foundIt == Implementation->ChannelMap.end()) return;
+		FMOD_VECTOR* fmodVector = new FMOD_VECTOR();
+		foundIt->second->get3DAttributes(fmodVector, nullptr);
+		*position = FmodToVector(*fmodVector);
+		delete fmodVector;
+	}
+
+
 	void AudioEngine::SetChannelVolume(int channelId, float volumedB)
 	{
 		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
@@ -203,6 +213,10 @@ namespace audiostuff {
 		fmodVector.y = position.y;
 		fmodVector.z = position.z;
 		return fmodVector;
+	}
+
+	utilStuff::Vector3 AudioEngine::FmodToVector(const FMOD_VECTOR fmodVector) {
+		return utilStuff::Vector3({ fmodVector.x, fmodVector.y, fmodVector.z });
 	}
 
 	float AudioEngine::DBToVolume(float db) {
