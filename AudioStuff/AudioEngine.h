@@ -13,8 +13,6 @@
 #include <vector>
 #include <iostream>
 
-//#include <math.h>
-
 namespace audiostuff {
 	struct FMODImplementation {
 		FMODImplementation();

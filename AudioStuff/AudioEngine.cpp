@@ -100,6 +100,20 @@ namespace audiostuff {
 		return channelId;
 	}
 
+	void AudioEngine::StopChannel(int channelId) {
+		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
+		if (foundIt == Implementation->ChannelMap.end()) return;
+
+		AudioEngine::ErrorCheck(foundIt->second->stop());
+	}
+	
+	void AudioEngine::StopAllChannels() {
+		for (std::map<int, FMOD::Channel*>::iterator it = Implementation->ChannelMap.begin(); it != Implementation->ChannelMap.end(); it++)
+		{
+			AudioEngine::ErrorCheck(it->second->stop());
+		}
+	}
+
 	void AudioEngine::SetChannel3dPosition(int channelId, const utilStuff::Vector3 position)
 	{
 		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
@@ -126,6 +140,16 @@ namespace audiostuff {
 
 		AudioEngine::ErrorCheck(foundIt->second->setVolume(DBToVolume(volumedB)));
 	}
+
+	bool AudioEngine::IsPlaying(int channelId) const {
+		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
+		if (foundIt == Implementation->ChannelMap.end()) return false;
+
+		bool isPlaying = false;
+		AudioEngine::ErrorCheck(foundIt->second->isPlaying(&isPlaying));
+		return isPlaying;
+	}
+
 
 	void AudioEngine::LoadBank(const std::string bankName, FMOD_STUDIO_LOAD_BANK_FLAGS flags) {
 		std::map<std::string, FMOD::Studio::Bank*>::iterator foundIt = Implementation->BankMap.find(bankName);
