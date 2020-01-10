@@ -114,6 +114,13 @@ namespace audiostuff {
 		}
 	}
 
+	void AudioEngine::SetChannelOcclusion(int channelId, const float direct, const float reverb) {
+		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
+		if (foundIt == Implementation->ChannelMap.end()) return;
+
+		AudioEngine::ErrorCheck(foundIt->second->set3DOcclusion(direct, reverb));
+	}
+
 	void AudioEngine::SetChannel3dPosition(int channelId, const utilStuff::Vector3 position)
 	{
 		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
@@ -251,6 +258,10 @@ namespace audiostuff {
 		return 20.0f * log10f(volume);
 	}
 
+	void AudioEngine::FlushCommands() {
+		Implementation->StudioSystem->flushCommands();
+	}
+
 	uint8_t AudioEngine::ErrorCheck(FMOD_RESULT result) {
 		if (result != FMOD_OK)
 		{
@@ -259,6 +270,8 @@ namespace audiostuff {
 		}
 		return 0;
 	}
+
+
 
 	void AudioEngine::Shutdown() {
 		delete Implementation;

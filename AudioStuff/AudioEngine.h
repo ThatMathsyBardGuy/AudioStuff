@@ -51,6 +51,7 @@ namespace audiostuff {
 		void GetEventParameterValue(const std::string eventName, const std::string eventParameter, float* parameter);
 		void SetEventParameterValue(const std::string eventName, const std::string parameterName, float value);
 		void StopAllChannels();
+		void SetChannelOcclusion(int channelId, const float direct, const float reverb);
 		void SetChannel3dPosition(int channelId, const utilStuff::Vector3 position);
 		void GetChannel3dPosition(int channelId, utilStuff::Vector3* position);
 		void SetChannelVolume(int channelId, float volumedB);
@@ -58,6 +59,8 @@ namespace audiostuff {
 		bool IsEventPlaying(const std::string eventName) const;
 		float DBToVolume(float db);
 		float VolumeTodB(float volume);
+
+		void FlushCommands();
 		FMOD_VECTOR VectorToFmod(const utilStuff::Vector3 position);
 		utilStuff::Vector3 FmodToVector(const FMOD_VECTOR fmodVector);
 	};

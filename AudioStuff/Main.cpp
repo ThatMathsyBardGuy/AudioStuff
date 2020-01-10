@@ -4,7 +4,7 @@
 #include "AudioEngine.h"
 #include <chrono>
 
-#define SOUNDDIR "E:/Users/Ethan/Documents/Untitled Games/AudioStuff/AudioStuff/resources/sounds/"
+#define SOUNDDIR "C:/Users/Admin/Documents/Audio Engine/AudioStuff/resources/sounds/"
 
 void main() {
 	float startTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -25,12 +25,19 @@ void main() {
 	float dt;
 	utilStuff::Vector3 enginePos;
 	bool running = true;
+	float boarOcclusionTest = 0.0f;
 	while (running)
 	{
 		lastTime = currentTime;
 		currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 		dt = currentTime - lastTime;
 		
+		boarOcclusionTest += 0.01f;
+		SoundEngine.SetChannelOcclusion(boarChannelId, boarOcclusionTest, 0.0f);
+		SoundEngine.FlushCommands();
+
+		std::cout << boarOcclusionTest << std::endl;
+
 		SoundEngine.Update();
 	};
 }
