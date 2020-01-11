@@ -53,12 +53,14 @@ namespace audiostuff {
 		void StopAllChannels();
 		void SetChannelOcclusion(int channelId, const float direct, const float reverb);
 		void SetChannel3dPosition(int channelId, const utilStuff::Vector3 position);
+		void SetChannelReverb(int channelId, const float wet);
 		void GetChannel3dPosition(int channelId, utilStuff::Vector3* position);
 		void SetChannelVolume(int channelId, float volumedB);
 		bool IsPlaying(int channelId) const;
 		bool IsEventPlaying(const std::string eventName) const;
 		float DBToVolume(float db);
 		float VolumeTodB(float volume);
+		void Add3dReverb(FMOD::Reverb3D** reverb);
 
 		void FlushCommands();
 		FMOD_VECTOR VectorToFmod(const utilStuff::Vector3 position);

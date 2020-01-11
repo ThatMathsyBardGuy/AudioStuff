@@ -72,6 +72,13 @@ namespace audiostuff {
 		Implementation->SoundMap.erase(foundIt);
 	}
 
+	void AudioEngine::Set3dListenerAndOrientation(const utilStuff::Vector3 pos, float volumedB) {
+		FMOD_VECTOR fmodpos = AudioEngine::VectorToFmod(pos);
+		AudioEngine::ErrorCheck(Implementation->System->set3DListenerAttributes(0, &fmodpos, 0, 0, 0));
+		
+	}
+
+
 	int AudioEngine::PlaySound(const std::string soundName, const utilStuff::Vector3 position, float volumedB)
 	{
 		int channelId = Implementation->NextChannelId++;
@@ -130,6 +137,13 @@ namespace audiostuff {
 		AudioEngine::ErrorCheck(foundIt->second->set3DAttributes(&fmodPosition, NULL));
 	}
 
+	void AudioEngine::SetChannelReverb(int channelId, const float wet) {
+		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
+		if (foundIt == Implementation->ChannelMap.end()) return;
+
+		AudioEngine::ErrorCheck(foundIt->second->setReverbProperties(0, wet));
+	}
+	
 	void AudioEngine::GetChannel3dPosition(int channelId, utilStuff::Vector3* position) {
 		std::map<int, FMOD::Channel*>::iterator foundIt = Implementation->ChannelMap.find(channelId);
 		if (foundIt == Implementation->ChannelMap.end()) return;
@@ -258,6 +272,10 @@ namespace audiostuff {
 		return 20.0f * log10f(volume);
 	}
 
+	void AudioEngine::Add3dReverb(FMOD::Reverb3D** reverb) {
+		AudioEngine::ErrorCheck(Implementation->System->createReverb3D(reverb));
+	}
+	
 	void AudioEngine::FlushCommands() {
 		Implementation->StudioSystem->flushCommands();
 	}
